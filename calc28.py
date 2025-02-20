@@ -1,4 +1,5 @@
 import sys
+import pytest
 from PyQt5.QtWidgets import (
     QApplication,
     QWidget,
@@ -6,82 +7,141 @@ from PyQt5.QtWidgets import (
     QLabel,
     QPushButton,
     QLineEdit,
-    QComboBox,
     QMessageBox,
 )
 
 
-class Calculator(QWidget):
+class CalculatorApp(QWidget):
     def __init__(self):
         super().__init__()
-        self.init_ui()
-
-    def init_ui(self):
         self.setWindowTitle("Калькулятор")
         self.setGeometry(100, 100, 300, 250)
 
-        layout = QVBoxLayout()
+        self.layout = QVBoxLayout()
 
-        self.label1 = QLabel("Введіть перше число:")
-        layout.addWidget(self.label1)
-        self.num1_input = QLineEdit()
-        layout.addWidget(self.num1_input)
+        self.result_label = QLabel("Результат: ", self)
+        self.layout.addWidget(self.result_label)
 
-        self.label2 = QLabel("Введіть друге число:")
-        layout.addWidget(self.label2)
-        self.num2_input = QLineEdit()
-        layout.addWidget(self.num2_input)
+        self.num1_input = QLineEdit(self)
+        self.num1_input.setPlaceholderText("Введіть перше число")
+        self.layout.addWidget(self.num1_input)
 
-        self.operation_label = QLabel("Оберіть операцію:")
-        layout.addWidget(self.operation_label)
+        self.num2_input = QLineEdit(self)
+        self.num2_input.setPlaceholderText("Введіть друге число")
+        self.layout.addWidget(self.num2_input)
 
-        self.operation_box = QComboBox()
-        self.operation_box.addItems(["+", "-", "*", "/", "//", "%"])
-        layout.addWidget(self.operation_box)
+        self.add_button = QPushButton("+")
+        self.add_button.clicked.connect(self.add)
+        self.layout.addWidget(self.add_button)
 
-        self.calculate_button = QPushButton("Обчислити")
-        self.calculate_button.clicked.connect(self.calculate)
-        layout.addWidget(self.calculate_button)
+        self.sub_button = QPushButton("-")
+        self.sub_button.clicked.connect(self.subtract)
+        self.layout.addWidget(self.sub_button)
 
-        self.result_label = QLabel("Результат: ")
-        layout.addWidget(self.result_label)
+        self.mul_button = QPushButton("*")
+        self.mul_button.clicked.connect(self.multiply)
+        self.layout.addWidget(self.mul_button)
 
-        self.setLayout(layout)
+        self.div_button = QPushButton("/")
+        self.div_button.clicked.connect(self.divide)
+        self.layout.addWidget(self.div_button)
 
-    def calculate(self):
+        self.int_div_button = QPushButton("//")
+        self.int_div_button.clicked.connect(self.integer_divide)
+        self.layout.addWidget(self.int_div_button)
+
+        self.mod_button = QPushButton("%")
+        self.mod_button.clicked.connect(self.modulo)
+        self.layout.addWidget(self.mod_button)
+
+        self.setLayout(self.layout)
+
+    def get_inputs(self):
         try:
             num1 = float(self.num1_input.text())
             num2 = float(self.num2_input.text())
-            operation = self.operation_box.currentText()
-
-            if operation == "+":
-                result = num1 + num2
-            elif operation == "-":
-                result = num1 - num2
-            elif operation == "*":
-                result = num1 * num2
-            elif operation == "/":
-                if num2 == 0:
-                    raise ZeroDivisionError("Ділення на нуль!")
-                result = num1 / num2
-            elif operation == "//":
-                if num2 == 0:
-                    raise ZeroDivisionError("Ділення на нуль!")
-                result = num1 // num2
-            elif operation == "%":
-                if num2 == 0:
-                    raise ZeroDivisionError("Ділення на нуль!")
-                result = num1 % num2
-
-            self.result_label.setText(f"Результат: {result}")
+            return num1, num2
         except ValueError:
-            QMessageBox.warning(self, "Помилка", "Введіть коректні числа!")
-        except ZeroDivisionError as e:
-            QMessageBox.warning(self, "Помилка", str(e))
+            QMessageBox.warning(self, "Помилка", "Будь ласка, введіть коректні числа")
+            return None, None
+
+    def add(self):
+        num1, num2 = self.get_inputs()
+        if num1 is not None and num2 is not None:
+            self.result_label.setText(f"Результат: {num1 + num2}")
+
+    def subtract(self):
+        num1, num2 = self.get_inputs()
+        if num1 is not None and num2 is not None:
+            self.result_label.setText(f"Результат: {num1 - num2}")
+
+    def multiply(self):
+        num1, num2 = self.get_inputs()
+        if num1 is not None and num2 is not None:
+            self.result_label.setText(f"Результат: {num1 * num2}")
+
+    def divide(self):
+        num1, num2 = self.get_inputs()
+        if num1 is not None and num2 is not None:
+            if num2 == 0:
+                QMessageBox.warning(self, "Помилка", "Ділення на нуль неможливе")
+            else:
+                self.result_label.setText(f"Результат: {num1 / num2}")
+
+    def integer_divide(self):
+        num1, num2 = self.get_inputs()
+        if num1 is not None and num2 is not None:
+            if num2 == 0:
+                QMessageBox.warning(
+                    self, "Помилка", "Цілочисельне ділення на нуль неможливе"
+                )
+            else:
+                self.result_label.setText(f"Результат: {num1 // num2}")
+
+    def modulo(self):
+        num1, num2 = self.get_inputs()
+        if num1 is not None and num2 is not None:
+            if num2 == 0:
+                QMessageBox.warning(
+                    self, "Помилка", "Остача від ділення на нуль неможлива"
+                )
+            else:
+                self.result_label.setText(f"Результат: {num1 % num2}")
+
+
+# Тестування функцій
+@pytest.mark.parametrize("a, b, expected", [(5, 3, 8), (-2, 4, 2), (0, 0, 0)])
+def test_addition(a, b, expected):
+    assert a + b == expected
+
+
+@pytest.mark.parametrize("a, b, expected", [(5, 3, 2), (4, 4, 0), (0, 5, -5)])
+def test_subtraction(a, b, expected):
+    assert a - b == expected
+
+
+@pytest.mark.parametrize("a, b, expected", [(5, 3, 15), (0, 4, 0), (-2, 2, -4)])
+def test_multiplication(a, b, expected):
+    assert a * b == expected
+
+
+@pytest.mark.parametrize("a, b, expected", [(6, 3, 2.0), (5, 2, 2.5), (-10, 2, -5.0)])
+def test_division(a, b, expected):
+    assert a / b == expected
+
+
+@pytest.mark.parametrize("a, b, expected", [(6, 3, 2), (5, 2, 2), (-10, 3, -4)])
+def test_integer_division(a, b, expected):
+    assert a // b == expected
+
+
+@pytest.mark.parametrize("a, b, expected", [(6, 4, 2), (5, 2, 1), (10, 3, 1)])
+def test_modulo(a, b, expected):
+    assert a % b == expected
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = Calculator()
+    window = CalculatorApp()
     window.show()
     sys.exit(app.exec_())
